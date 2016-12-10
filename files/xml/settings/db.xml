@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<performers.DatabaseUtility>
+  <host>127.0.0.1</host>
+  <database>finances</database>
+  <encoding>utf8</encoding>
+  <user>root</user>
+</performers.DatabaseUtility>

@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list>
+  <models.FormField>
+    <name>Име</name>
+    <type>TEXT_FIELD</type>
+    <relationField>name</relationField>
+    <minLength>1</minLength>
+  </models.FormField>
+  <models.FormField>
+    <name>Енергия</name>
+    <type>TEXT_FIELD</type>
+    <relationField>energy</relationField>
+    <onlyNumbers>true</onlyNumbers>
+  </models.FormField>
+  <models.FormField>
+    <name>Мазнини</name>
+    <type>TEXT_FIELD</type>
+    <relationField>fats</relationField>
+    <onlyNumbers>true</onlyNumbers>
+  </models.FormField>
+  <models.FormField>
+    <name>test</name>
+    <type>COMBO_BOX</type>
+    <relationField>market_id</relationField>
+    <multipleOptions>
+        <visuals.OMultipleOption>
+          <id>1</id>
+          <name>option1</name>
+        </visuals.OMultipleOption>
+        <visuals.OMultipleOption>
+          <id>33</id>
+          <name>option2</name>
+        </visuals.OMultipleOption>
+    </multipleOptions>
+    <expandable>true</expandable>
+  </models.FormField>
+  <models.FormField>
+    <name>custom options</name>
+    <type>COMBO_BOX</type>
+    <relationField>city_id</relationField>
+    <expandable>true</expandable>
+  </models.FormField>
+</list>
