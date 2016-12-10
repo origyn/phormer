@@ -25,19 +25,22 @@
     <multipleOptions>
         <visuals.OMultipleOption>
           <id>1</id>
-          <name>option1</name>
+          <name>Ориз</name>
         </visuals.OMultipleOption>
         <visuals.OMultipleOption>
           <id>33</id>
-          <name>option2</name>
+          <name>Картофи</name>
         </visuals.OMultipleOption>
     </multipleOptions>
-    <expandable>true</expandable>
+    <expandable>false</expandable>
+    <searchable>true</searchable>
   </models.FormField>
   <models.FormField>
     <name>custom options</name>
     <type>COMBO_BOX</type>
     <relationField>city_id</relationField>
     <expandable>true</expandable>
+    <searchable>true</searchable>
+    <mandatory>true</mandatory>
   </models.FormField>
 </list>

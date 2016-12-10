@@ -12,7 +12,7 @@ public class FormField {
 	private JForm.fieldTypes type = null;
 	private int minLength = 0, maxLength = 0, defaultSelectedEntityId = 0, orderNumber = 0;
 	private ArrayList<OMultipleOption> multipleOptions = new ArrayList<OMultipleOption>();
-	private boolean mandatory = false, optionsSorted = false, selectionLocked = false, onlyNumbers = false, expandable = false;
+	private boolean mandatory = false, optionsSorted = false, selectionLocked = false, onlyNumbers = false, expandable = false, searchable = false;
 	
 	public String getName() {
 		return name;
@@ -149,5 +149,13 @@ public class FormField {
 
 	public void setExpandable(boolean expandable) {
 		this.expandable = expandable;
+	}
+
+	public boolean isSearchable() {
+		return searchable;
+	}
+
+	public void setSearchable(boolean searchable) {
+		this.searchable = searchable;
 	}
 }

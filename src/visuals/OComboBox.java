@@ -14,12 +14,13 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 
+import models.ComboBoxAutoSelection;
 import models.FormComponent;
 import models.FormField;
 
 public class OComboBox<E> extends JComboBox<E> implements FormComponent {
 	private static final long serialVersionUID = 880424372897780521L;
-	private boolean toBeSelected = false, selectionLocked = false;
+	private boolean toBeSelected = false, selectionLocked = false, searchable = false;
 	private ArrayList<OMultipleOption> options = new ArrayList<>();
 	private int defaultSelectedIndex = 0;
 	JButton btNew;
@@ -29,9 +30,11 @@ public class OComboBox<E> extends JComboBox<E> implements FormComponent {
 	}
 	
 	public void build(FormField field) {
+		this.setEditable(true);
 		setToBeSelected(field.isMandatory());
 		setOptions(field.getMultipleOptions());
 		setSelectionLocked(field.isSelectionLocked());
+		setSearchable(field.isSearchable());
 		
 		if(field.isExpandable()) {
 			btNew = new JButton(new ImageIcon("files/pix/new.png"));
@@ -62,9 +65,13 @@ public class OComboBox<E> extends JComboBox<E> implements FormComponent {
 			this.setEnabled(false);
 		}
 		else {
-			((JTextField) this.getEditor().getEditorComponent()).setBackground(null);
-			this.setEditable(false);
+			((JTextField) this.getEditor().getEditorComponent()).setBackground(new Color(UIManager.getColor("ComboBox.background").getRGB()));
+			this.setEditable(this.isSearchable());
 			this.setEnabled(true);
+		}
+		
+		if(this.isSearchable()) {
+			((JTextField) this.getEditor().getEditorComponent()).setDocument(new ComboBoxAutoSelection<E>(this));
 		}
 	}
 	
@@ -170,5 +177,13 @@ public class OComboBox<E> extends JComboBox<E> implements FormComponent {
 
 	public void setSelectionLocked(boolean selectionLocked) {
 		this.selectionLocked = selectionLocked;
+	}
+
+	public boolean isSearchable() {
+		return searchable;
+	}
+
+	public void setSearchable(boolean searchable) {
+		this.searchable = searchable;
 	}
 }
