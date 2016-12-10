@@ -345,7 +345,6 @@ public class JForm extends JPanel {
 	}
 	
 	public void addComboOption(String comboBoxName, int optionId, String optionText) {
-		
 		for (FormField ff : formFields.values()) {
 			if(ff.getName().equals(comboBoxName)) {
 				if(ff.getMultipleOptionsPure() == null) {
