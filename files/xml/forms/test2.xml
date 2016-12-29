@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<list>
+  <models.FormField>
+    <name>Име</name>
+    <type>TEXT_FIELD</type>
+    <relationField>name</relationField>
+    <minLength>1</minLength>
+  </models.FormField>
+</list>

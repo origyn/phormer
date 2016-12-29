@@ -37,7 +37,8 @@ public class OComboBox<E> extends JComboBox<E> implements FormComponent {
 		setSearchable(field.isSearchable());
 		
 		if(field.isExpandable()) {
-			btNew = new JButton(new ImageIcon("files/pix/new.png"));
+			btNew = new JButton(new ImageIcon("files/pix/new_icon2.png"));
+			btNew.setPressedIcon(new ImageIcon("files/pix/new_icon.png"));
 			btNew.setBorder(null);
 			btNew.setOpaque(false);
 			btNew.setContentAreaFilled(false);

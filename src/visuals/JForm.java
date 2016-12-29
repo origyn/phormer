@@ -4,8 +4,11 @@ import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.lang.reflect.Field;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
@@ -20,17 +23,21 @@ import com.thoughtworks.xstream.XStream;
 import models.Entity;
 import models.FormField;
 import models.FormListener;
+import models.Relator;
 
 import javax.swing.AbstractButton;
 import javax.swing.JButton;
+import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JTextField;
 import javax.swing.GroupLayout.Alignment;
 
 public class JForm extends JPanel {
 	private static final long serialVersionUID = -432718193365912996L;
 	private int componentsWidth = 0, componentsHeight = 0;
 	private FormListener listener;
+	private String dbSettingsXmlPath;
 	HashMap<Integer, FormField> formFields = new HashMap<>();
 	HashMap<Integer, String> hmFieldOrder = new HashMap<>();
 	HashMap<String, OTextField> hmTextFields = new HashMap<>();
@@ -39,6 +46,7 @@ public class JForm extends JPanel {
 	HashMap<String, JLabel> hmLabels = new HashMap<>();
 	HashMap<String, JLabel> hmInfoLabels = new HashMap<>();
 	HashMap<String, OButtonGroup> hmRadioGroups = new HashMap<>();
+	HashMap<String, HashMap<String, String>> hmComboBoxSourceRelationMapper = new HashMap<>();
 	Entity entity;
 	public JButton btSave = new JButton("Save");
 	public JButton btCancel = new JButton("Cancel");
@@ -51,6 +59,7 @@ public class JForm extends JPanel {
 	}
 	
 	public JForm(String formSpecsXmlPath, String dbSettingsXmlPath, String relation, int componentsWidth, int componentsHeight) {
+		this.dbSettingsXmlPath = dbSettingsXmlPath;
 		this.componentsWidth = componentsWidth;
 		this.componentsHeight = componentsHeight;
 		this.entity = new Entity(relation, dbSettingsXmlPath);
@@ -84,8 +93,10 @@ public class JForm extends JPanel {
 		if(component == null) {
 			component = hmTextAreas.get(fieldName);
 		}
-				
-		component.requestFocusInWindow();
+		
+		if(component != null) {
+			component.requestFocusInWindow();
+		}
 	}
 	
 	public void createListeners() {
@@ -126,6 +137,7 @@ public class JForm extends JPanel {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				clearValues();
+				
 				if(listener != null) listener.onCancel();
 			}
 		});
@@ -158,7 +170,77 @@ public class JForm extends JPanel {
 				});
 				break;
 			case COMBO_BOX:
+				if(formFields.get(key).getSourceRelation() != null && formFields.get(key).getSourceRelationField() != null) {
+					ResultSet rs = this.entity.dbUtility.execute(buildPopulatorQuery(formFields.get(key)));
+					
+					try {
+						while(rs.next()) {
+							if(formFields.get(key).getMultipleOptions() == null) {
+								formFields.get(key).setMultipleOptions(new ArrayList<OMultipleOption>());
+							}
+							
+							formFields.get(key).getMultipleOptions().add(new OMultipleOption(rs.getInt("id"), rs.getObject(formFields.get(key).getSourceRelationField()).toString()));
+						}
+						
+						rs.close();
+					} catch (SQLException e1) {
+						e1.printStackTrace();
+					}
+				}
+				
 				hmComboBoxes.put(formFields.get(key).getName(), new OComboBox<String>(formFields.get(key)));
+				
+				if(formFields.get(key).isExpandable() && formFields.get(key).getExpanderXmlPath() != null) {
+					hmComboBoxes.get(formFields.get(key).getName()).btNew.addActionListener(new ActionListener() {
+						
+						@Override
+						public void actionPerformed(ActionEvent e) {
+							JFrame fr = new JFrame("New " + formFields.get(key).getName());
+							JForm expander = new JForm(formFields.get(key).getExpanderXmlPath(), dbSettingsXmlPath, formFields.get(key).getSourceRelation(), 150, 25);
+							
+							expander.addFormListener(new FormListener() {
+								
+								@Override
+								public void onSubmit() {
+									formFields.get(key).emptyMultipleOptions();
+									
+									ResultSet rs = entity.dbUtility.execute(buildPopulatorQuery(formFields.get(key)));
+									
+									try {
+										if(formFields.get(key).getMultipleOptions() == null) {
+											formFields.get(key).setMultipleOptions(new ArrayList<OMultipleOption>());
+										}
+										
+										while(rs.next()) {
+											formFields.get(key).getMultipleOptions().add(new OMultipleOption(rs.getInt("id"), rs.getObject(formFields.get(key).getSourceRelationField()).toString()));
+										}
+										
+										rs.close();
+									} catch (SQLException e1) {
+										e1.printStackTrace();
+									}
+									
+									hmComboBoxes.get(formFields.get(key).getName()).rebuildOptions(formFields.get(key));
+									((JTextField) hmComboBoxes.get(formFields.get(key).getName()).getEditor().getEditorComponent()).requestFocusInWindow();
+									
+									fr.dispatchEvent(new WindowEvent(fr, WindowEvent.WINDOW_CLOSING));
+								}
+								
+								@Override
+								public void onCancel() {
+									fr.dispatchEvent(new WindowEvent(fr, WindowEvent.WINDOW_CLOSING));
+								}
+							});
+							
+							fr.setSize(new Dimension(480, 320));
+							fr.add(expander);
+							fr.setLocationRelativeTo(null);
+							fr.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+							fr.setVisible(true);
+						}
+					});
+				}
+				
 				break;
 			case TEXT_AREA:
 				hmTextAreas.put(formFields.get(key).getName(), new OTextArea(formFields.get(key)));
@@ -342,6 +424,111 @@ public class JForm extends JPanel {
 				break;
 			}
 		});
+	}
+	
+	public String buildPopulatorQuery(FormField field) {
+		String query = "SELECT ".concat(field.getSourceRelation()).concat(".id, ");
+		
+		if(field.getSourceRelatorAggregate() == null) {
+			query = query.concat(field.getSourceRelationField()).concat(" FROM ").concat(field.getSourceRelation());;
+		}
+		else {
+			query = query.concat(field.getSourceRelatorAggregate()).concat("(");
+			
+			HashMap<Integer, Relator> hm = new HashMap<>();
+			
+			for (Relator rel : field.getSourceRelators()) {
+				hm.put(rel.getOrderNumber(), rel);
+			}
+			
+			Integer[] keys = hm.keySet().toArray(new Integer[]{});
+			
+			Arrays.sort(keys);
+			
+			for(int i = 0; i < keys.length; i++) {
+				if(!hm.get(keys[i]).isVoluntary()) {
+					if(hm.get(keys[i]).getPrefix() != null || hm.get(keys[i]).getSuffix() != null) {
+						query = query.concat("CONCAT(");
+					}
+					
+					if(hm.get(keys[i]).getPrefix() != null) {
+						query = query.concat("'").concat(hm.get(keys[i]).getPrefix()).concat("', ");
+					}
+					
+					query = query.concat(hm.get(keys[i]).getJoinRelation() == null?field.getSourceRelation():hm.get(keys[i]).getJoinRelation()).concat(".")
+							.concat(hm.get(keys[i]).getJoinRelationField() == null?hm.get(keys[i]).getRelationField():hm.get(keys[i]).getJoinRelationField());
+					
+					if(hm.get(keys[i]).getSuffix() != null) {
+						query = query.concat(", '").concat(hm.get(keys[i]).getSuffix()).concat("'");
+					}
+					
+					if(hm.get(keys[i]).getPrefix() != null || hm.get(keys[i]).getSuffix() != null) {
+						query = query.concat(")");
+					}
+					
+					query = query.concat(", ");
+				}
+				else if(hm.get(keys[i]).getJoinRelation() != null && hm.get(keys[i]).getJoinRelationField() != null) {
+					query = query.concat("IF(").concat(hm.get(keys[i]).getJoinRelation().concat(".").concat(hm.get(keys[i]).getJoinRelationField())).concat(" IS NULL, '', ");
+					
+					if(hm.get(keys[i]).getPrefix() != null || hm.get(keys[i]).getSuffix() != null) {
+						query = query.concat("CONCAT(");
+					}
+					
+					if(hm.get(keys[i]).getPrefix() != null) {
+						query = query.concat("'").concat(hm.get(keys[i]).getPrefix()).concat("', ");
+					}
+					
+					query = query.concat(hm.get(keys[i]).getJoinRelation()).concat(".").concat(hm.get(keys[i]).getJoinRelationField());
+					
+					if(hm.get(keys[i]).getSuffix() != null) {
+						query = query.concat(", '").concat(hm.get(keys[i]).getSuffix()).concat("'");
+					}
+					
+					if(hm.get(keys[i]).getPrefix() != null || hm.get(keys[i]).getSuffix() != null) {
+						query = query.concat(")");
+					}
+					
+					query = query.concat("), ");
+				}
+				else {
+					query = query.concat("IF(").concat(field.getSourceRelation().concat(".").concat(hm.get(keys[i]).getRelationField())).concat(" IS NULL, '', ");
+					
+					if(hm.get(keys[i]).getPrefix() != null || hm.get(keys[i]).getSuffix() != null) {
+						query = query.concat("CONCAT(");
+					}
+					
+					if(hm.get(keys[i]).getPrefix() != null) {
+						query = query.concat("'").concat(hm.get(keys[i]).getPrefix()).concat("', ");
+					}
+					
+					query = query.concat(field.getSourceRelation()).concat(".").concat(hm.get(keys[i]).getRelationField());
+					
+					if(hm.get(keys[i]).getSuffix() != null) {
+						query = query.concat(", '").concat(hm.get(keys[i]).getSuffix()).concat("'");
+					}
+					
+					if(hm.get(keys[i]).getPrefix() != null || hm.get(keys[i]).getSuffix() != null) {
+						query = query.concat(")");
+					}
+					
+					query = query.concat("), ");
+				}
+			}
+			
+			query = query.substring(0, query.length()-2).concat(") AS ").concat(field.getSourceRelationField()).concat(" FROM ").concat(field.getSourceRelation());
+			
+			for (Integer key : keys) {
+				if(hm.get(key).getJoinRelation() != null && hm.get(key).getJoinRelationField() != null) {
+					query= query.concat(" JOIN ").concat(hm.get(key).getJoinRelation()).concat(" ON ")
+							.concat(hm.get(key).getJoinRelation()).concat(".id = ").concat(field.getSourceRelation()).concat(".").concat(hm.get(key).getRelationField());
+				}
+			}
+		}
+		
+		System.out.println(query);
+		
+		return query;
 	}
 	
 	public void addComboOption(String comboBoxName, int optionId, String optionText) {

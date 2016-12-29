@@ -36,9 +36,65 @@
     <searchable>true</searchable>
   </models.FormField>
   <models.FormField>
+    <name>test</name>
+    <type>COMBO_BOX</type>
+    <relationField>product_id</relationField>
+    <sourceRelation>commodities.product</sourceRelation>
+    <sourceRelationField>name</sourceRelationField>
+    <expandable>false</expandable>
+    <searchable>true</searchable>
+  </models.FormField>
+  <models.FormField>
     <name>custom options</name>
     <type>COMBO_BOX</type>
     <relationField>city_id</relationField>
+    <sourceRelation>business_catalogue.address_book</sourceRelation>
+    <sourceRelationField>address</sourceRelationField>
+    <sourceRelatorAggregate>CONCAT</sourceRelatorAggregate>
+    <sourceRelators>
+      <models.Relator>
+        <orderNumber>1</orderNumber>
+        <suffix>, </suffix>
+        <relationField>country_id</relationField>
+        <joinRelation>address.country</joinRelation>
+        <joinRelationField>name</joinRelationField>
+      </models.Relator>
+      <models.Relator>
+        <orderNumber>2</orderNumber>
+        <suffix>, </suffix>
+        <relationField>city_id</relationField>
+        <joinRelation>address.city</joinRelation>
+        <joinRelationField>name</joinRelationField>
+      </models.Relator>
+      <models.Relator>
+        <orderNumber>3</orderNumber>
+        <prefix>"</prefix>
+        <suffix>" </suffix>
+        <relationField>street_id</relationField>
+        <joinRelation>address.street</joinRelation>
+        <joinRelationField>name</joinRelationField>
+      </models.Relator>
+      <models.Relator>
+        <orderNumber>4</orderNumber>
+        <prefix>№</prefix>
+        <suffix>, </suffix>
+        <relationField>street_number</relationField>
+      </models.Relator>
+      <models.Relator>
+        <orderNumber>5</orderNumber>
+        <prefix>ет. </prefix>
+        <suffix>, </suffix>
+        <relationField>floor</relationField>
+        <voluntary>true</voluntary>
+      </models.Relator>
+      <models.Relator>
+        <orderNumber>6</orderNumber>
+        <prefix>ап. </prefix>
+        <relationField>property_number</relationField>
+        <voluntary>true</voluntary>
+      </models.Relator>
+    </sourceRelators>
+    <expanderXmlPath>files/xml/forms/test2.xml</expanderXmlPath>
     <expandable>true</expandable>
     <searchable>true</searchable>
     <mandatory>true</mandatory>

@@ -8,10 +8,11 @@ import visuals.JForm;
 import visuals.OMultipleOption;
 
 public class FormField {
-	private String name = "", defaultValue = "", relationField;
+	private String name = "", defaultValue = "", relationField, sourceRelation, sourceRelationField, sourceRelatorAggregate, expanderXmlPath;
 	private JForm.fieldTypes type = null;
 	private int minLength = 0, maxLength = 0, defaultSelectedEntityId = 0, orderNumber = 0;
 	private ArrayList<OMultipleOption> multipleOptions = new ArrayList<OMultipleOption>();
+	private ArrayList<Relator> sourceRelators = new ArrayList<Relator>();
 	private boolean mandatory = false, optionsSorted = false, selectionLocked = false, onlyNumbers = false, expandable = false, searchable = false;
 	
 	public String getName() {
@@ -81,6 +82,20 @@ public class FormField {
 
 	public void setMultipleOptions(ArrayList<OMultipleOption> multipleOptions) {
 		this.multipleOptions = multipleOptions;
+	}
+	
+	public void emptyMultipleOptions() {
+		if(this.multipleOptions != null) {
+			this.multipleOptions.clear();
+		}
+	}
+	
+	public ArrayList<Relator> getSourceRelators() {
+		return sourceRelators;
+	}
+
+	public void setSourceRelators(ArrayList<Relator> sourceRelators) {
+		this.sourceRelators = sourceRelators;
 	}
 
 	public int getDefaultSelectedEntityId() {
@@ -157,5 +172,37 @@ public class FormField {
 
 	public void setSearchable(boolean searchable) {
 		this.searchable = searchable;
+	}
+
+	public String getSourceRelation() {
+		return sourceRelation;
+	}
+
+	public void setSourceRelation(String sourceRelation) {
+		this.sourceRelation = sourceRelation;
+	}
+
+	public String getSourceRelationField() {
+		return sourceRelationField;
+	}
+
+	public void setSourceRelationField(String sourceRelationField) {
+		this.sourceRelationField = sourceRelationField;
+	}
+
+	public String getExpanderXmlPath() {
+		return expanderXmlPath;
+	}
+
+	public void setExpanderXmlPath(String expanderXmlPath) {
+		this.expanderXmlPath = expanderXmlPath;
+	}
+
+	public String getSourceRelatorAggregate() {
+		return sourceRelatorAggregate;
+	}
+
+	public void setSourceRelatorAggregate(String sourceRelatorAggregate) {
+		this.sourceRelatorAggregate = sourceRelatorAggregate;
 	}
 }

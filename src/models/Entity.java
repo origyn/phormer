@@ -23,6 +23,13 @@ public class Entity {
 		dbUtility = (DatabaseUtility) xstream.fromXML(new File(dbSettingsXmlPath));
 	}
 	
+	public Entity(String dbSettingsXmlPath) {
+		XStream xstream = new XStream();
+		xstream.setMode(XStream.NO_REFERENCES);
+		
+		dbUtility = (DatabaseUtility) xstream.fromXML(new File(dbSettingsXmlPath));
+	}
+	
 	public boolean save() {
 		if(properties.get("id") != null) {
 			if(Integer.parseInt(properties.get("id")) > 0) {
@@ -101,5 +108,9 @@ public class Entity {
 	
 	public void addProperty(String propertyName, String propertyValue) {
 		properties.put(propertyName, propertyValue);
+	}
+	
+	public String get(String propertyName) {
+		return properties.get(propertyName);
 	}
 }

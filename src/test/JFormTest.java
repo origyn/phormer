@@ -5,9 +5,9 @@ import javax.swing.JFrame;
 import models.FormListener;
 import visuals.JForm;
 
-public class Primary {
-	public Primary() {
-		JForm form = new JForm("files/xml/forms/test.xml", "files/xml/settings/db.xml", "foods.product", 200, 20);
+public class JFormTest {
+	public JFormTest() {
+		JForm form = new JForm("files/xml/forms/test.xml", "files/xml/settings/db.xml", "foods.product", 300, 20);
 		form.addFormListener(new FormListener() {
 			
 			@Override
@@ -33,6 +33,6 @@ public class Primary {
 	}
 	
 	public static void main(String[] args) {
-		new Primary();
+		new JFormTest();
 	}
 }
