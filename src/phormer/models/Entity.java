@@ -1,4 +1,4 @@
-package models;
+package phormer.models;
 
 import java.io.File;
 import java.sql.SQLException;
@@ -8,7 +8,7 @@ import java.util.stream.Collectors;
 
 import com.thoughtworks.xstream.XStream;
 
-import performers.DatabaseUtility;
+import phormer.performers.DatabaseUtility;
 
 public class Entity {
 	public DatabaseUtility dbUtility;

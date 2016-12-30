@@ -1,4 +1,4 @@
-package performers;
+package phormer.performers;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -6,6 +6,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Types;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.stream.Collectors;
@@ -123,7 +124,12 @@ public class DatabaseUtility {
 					prep.setInt(i+1, argValue);
 				}
 				catch (NumberFormatException ex) {
-					prep.setString(i+1, arguments.get(keys[i]));
+					if(arguments.get(keys[i]).length() > 0) {
+						prep.setString(i+1, arguments.get(keys[i]));
+					}
+					else {
+						prep.setNull(i+1, Types.INTEGER);
+					}
 				}
 			}
 			

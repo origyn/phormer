@@ -1,6 +1,5 @@
-package visuals;
+package phormer.models;
 
-import javax.swing.BorderFactory;
 import javax.swing.JPanel;
 
 public class JInfoPanel extends JPanel {
@@ -9,21 +8,22 @@ public class JInfoPanel extends JPanel {
 	String entityName;
 	
 	public JInfoPanel() {
-		
+		super();
 	}
 	
 	public int getEntityId() {
 		return entityId;
 	}
+	
 	public void setEntityId(int entityId) {
 		this.entityId = entityId;
 	}
+
 	public String getEntityName() {
 		return entityName;
 	}
-	public void setEnergyValue(String entityName) {
-		this.entityName = entityName;
-		
-		this.setBorder(BorderFactory.createTitledBorder(entityName));
+
+	public static long getSerialversionuid() {
+		return serialVersionUID;
 	}
 }

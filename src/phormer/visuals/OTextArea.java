@@ -1,12 +1,12 @@
-package visuals;
+package phormer.visuals;
 
 import java.awt.Color;
 import javax.swing.BorderFactory;
 import javax.swing.JTextArea;
 import javax.swing.UIManager;
 
-import models.FormComponent;
-import models.FormField;
+import phormer.models.FormComponent;
+import phormer.models.FormField;
 
 public class OTextArea extends JTextArea implements FormComponent {
 	private static final long serialVersionUID = -208598726238375659L;

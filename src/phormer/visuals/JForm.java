@@ -1,9 +1,11 @@
-package visuals;
+package phormer.visuals;
 
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.lang.reflect.Field;
@@ -20,10 +22,10 @@ import javax.swing.GroupLayout.SequentialGroup;
 
 import com.thoughtworks.xstream.XStream;
 
-import models.Entity;
-import models.FormField;
-import models.FormListener;
-import models.Relator;
+import phormer.models.Entity;
+import phormer.models.FormField;
+import phormer.models.FormListener;
+import phormer.models.Relator;
 
 import javax.swing.AbstractButton;
 import javax.swing.JButton;
@@ -170,24 +172,11 @@ public class JForm extends JPanel {
 				});
 				break;
 			case COMBO_BOX:
-				if(formFields.get(key).getSourceRelation() != null && formFields.get(key).getSourceRelationField() != null) {
-					ResultSet rs = this.entity.dbUtility.execute(buildPopulatorQuery(formFields.get(key)));
-					
-					try {
-						while(rs.next()) {
-							if(formFields.get(key).getMultipleOptions() == null) {
-								formFields.get(key).setMultipleOptions(new ArrayList<OMultipleOption>());
-							}
-							
-							formFields.get(key).getMultipleOptions().add(new OMultipleOption(rs.getInt("id"), rs.getObject(formFields.get(key).getSourceRelationField()).toString()));
-						}
-						
-						rs.close();
-					} catch (SQLException e1) {
-						e1.printStackTrace();
-					}
+				if(formFields.get(key).getSubordinateOf() != null && formFields.get(key).getSubordinateRelationField() != null) {
+					formFields.get(key).setSelectionLocked(true);
 				}
-				
+
+				populateComboBoxFromDB(key, false);
 				hmComboBoxes.put(formFields.get(key).getName(), new OComboBox<String>(formFields.get(key)));
 				
 				if(formFields.get(key).isExpandable() && formFields.get(key).getExpanderXmlPath() != null) {
@@ -196,7 +185,7 @@ public class JForm extends JPanel {
 						@Override
 						public void actionPerformed(ActionEvent e) {
 							JFrame fr = new JFrame("New " + formFields.get(key).getName());
-							JForm expander = new JForm(formFields.get(key).getExpanderXmlPath(), dbSettingsXmlPath, formFields.get(key).getSourceRelation(), 150, 25);
+							JForm expander = new JForm(formFields.get(key).getExpanderXmlPath(), dbSettingsXmlPath, formFields.get(key).getSourceRelation(), 300, 25);
 							
 							expander.addFormListener(new FormListener() {
 								
@@ -204,20 +193,16 @@ public class JForm extends JPanel {
 								public void onSubmit() {
 									formFields.get(key).emptyMultipleOptions();
 									
-									ResultSet rs = entity.dbUtility.execute(buildPopulatorQuery(formFields.get(key)));
-									
-									try {
-										if(formFields.get(key).getMultipleOptions() == null) {
-											formFields.get(key).setMultipleOptions(new ArrayList<OMultipleOption>());
+									if(formFields.get(key).getSubordinateOf() != null && formFields.get(key).getSubordinateRelationField() != null) {
+										if(hmComboBoxes.get(formFields.get(key).getSubordinateOf()).getSelectedEntityId() > 0) {
+											populateComboBoxFromDB(key, true);
 										}
-										
-										while(rs.next()) {
-											formFields.get(key).getMultipleOptions().add(new OMultipleOption(rs.getInt("id"), rs.getObject(formFields.get(key).getSourceRelationField()).toString()));
+										else {
+											formFields.get(key).setSelectionLocked(true);
 										}
-										
-										rs.close();
-									} catch (SQLException e1) {
-										e1.printStackTrace();
+									}
+									else {
+										populateComboBoxFromDB(key, true);
 									}
 									
 									hmComboBoxes.get(formFields.get(key).getName()).rebuildOptions(formFields.get(key));
@@ -237,6 +222,7 @@ public class JForm extends JPanel {
 							fr.setLocationRelativeTo(null);
 							fr.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 							fr.setVisible(true);
+							fr.pack();
 						}
 					});
 				}
@@ -256,8 +242,63 @@ public class JForm extends JPanel {
 			hmFieldOrder.put(key, formFields.get(key).getName());
 		});
 		
+		formFields.keySet().stream()
+			.forEach(key -> {
+				if(formFields.get(key).getType() == fieldTypes.COMBO_BOX && formFields.get(key).getSubordinateOf() != null && formFields.get(key).getSubordinateRelationField() != null) {
+					hmComboBoxes.get(formFields.get(key).getSubordinateOf()).addItemListener(new ItemListener() {
+						
+						@Override
+						public void itemStateChanged(ItemEvent e) {
+							if(((OComboBox<?>) e.getSource()).getSelectedItem() != null) {
+								int selectedOptionEntityId = ((OComboBox<?>) e.getSource()).getSelectedEntityId();
+								
+								if(selectedOptionEntityId == 0) {
+									formFields.get(key).setSelectionLocked(true);
+									hmComboBoxes.get(formFields.get(key).getName()).rebuildOptions(formFields.get(key));
+								}
+								else {
+									formFields.get(key).setSubordinateRelationFieldValue(selectedOptionEntityId);
+									formFields.get(key).setSelectionLocked(false);
+									populateComboBoxFromDB(key, true);
+									hmComboBoxes.get(formFields.get(key).getName()).rebuildOptions(formFields.get(key));
+								}
+							}
+						}
+					});
+				}
+			});
+		
 		createLayouts();
 		setSizes();
+	}
+	
+	public void populateComboBoxFromDB(int key, boolean isClean) {
+		if(formFields.get(key).getSourceRelation() != null && formFields.get(key).getSourceRelationField() != null) {
+			if(isClean) {
+				formFields.get(key).emptyMultipleOptions();
+			}
+			
+			ResultSet rs = entity.dbUtility.execute(buildPopulatorQuery(formFields.get(key)));
+
+			if(formFields.get(key).getMultipleOptions() == null) {
+				formFields.get(key).setMultipleOptions(new ArrayList<OMultipleOption>());
+			}
+
+			try {
+				while(rs.next()) {
+					formFields.get(key).getMultipleOptions().add(
+							new OMultipleOption(rs.getInt("id"), rs.getObject(formFields.get(key).getSourceRelationField()).toString()));
+				}
+				
+				rs.close();
+			} catch (SQLException e1) {
+				e1.printStackTrace();
+			}
+			
+			if(formFields.get(key).getMultipleOptions().size() == 0) {
+				formFields.get(key).setSelectionLocked(true);
+			}
+		}
 	}
 	
 	public void setSizes() {
@@ -526,8 +567,12 @@ public class JForm extends JPanel {
 			}
 		}
 		
-		System.out.println(query);
+		if(field.getSubordinateRelationField() != null && field.getSubordinateRelationFieldValue() != null) {
+			query = query.concat(" WHERE ").concat(field.getSourceRelation()).concat(".").concat(field.getSubordinateRelationField()).concat(" = ")
+					.concat(field.getSubordinateRelationFieldValue());
+		}
 		
+//		System.out.println(query);
 		return query;
 	}
 	

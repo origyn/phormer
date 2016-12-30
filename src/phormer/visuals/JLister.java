@@ -1,4 +1,4 @@
-package visuals;
+package phormer.visuals;
 
 import java.awt.Component;
 import java.awt.Cursor;
@@ -25,8 +25,8 @@ import javax.swing.JTextField;
 import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 
-import models.Entity;
-import models.FormListener;
+import phormer.models.Entity;
+import phormer.models.FormListener;
 
 public class JLister extends JPanel {
 	private static final long serialVersionUID = -8710333638794205968L;
@@ -131,7 +131,7 @@ public class JLister extends JPanel {
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
 				JFrame fr = new JFrame(expanderRelation);
-				JForm expander = new JForm(mainExpanderXML, dbSettingsXmlPath, expanderRelation, 150, 25);
+				JForm expander = new JForm(mainExpanderXML, dbSettingsXmlPath, expanderRelation, 300, 25);
 				
 				expander.addFormListener(new FormListener() {
 					
@@ -152,6 +152,7 @@ public class JLister extends JPanel {
 				fr.setLocationRelativeTo(null);
 				fr.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 				fr.setVisible(true);
+				fr.pack();
 			}
 		});
 		
@@ -184,9 +185,9 @@ public class JLister extends JPanel {
 			Class<?> c = Class.forName(getPanelClass());
 
 			while(rs.next()) {
-				Object p = c.newInstance();
+				Object panel = c.newInstance();
 				
-				((Component) p).setMaximumSize(this.infoPanelDimension);
+				((Component) panel).setMaximumSize(this.infoPanelDimension);
 				
 				if(methodMapper != null) {
 					String[] keys = methodMapper.keySet().toArray(new String[]{});
@@ -202,14 +203,14 @@ public class JLister extends JPanel {
 						}
 						
 						if(columnIndex > 0) {
-							Method m = c.getDeclaredMethod(methodMapper.get(key), Class.forName(rsmd.getColumnClassName(columnIndex)));
+							Method method = c.getDeclaredMethod(methodMapper.get(key), Class.forName(rsmd.getColumnClassName(columnIndex)));
 							
-							m.invoke(p, rs.getObject(key));
+							method.invoke(panel, rs.getObject(key));
 						}
 					}
 				}
 				
-				addEntityPanel(p);
+				addEntityPanel(panel);
 			}
 			
 			scrlPane.setViewportView(pnInfoPanelsContainer);
@@ -227,9 +228,9 @@ public class JLister extends JPanel {
 		populate(selectQuery);
 	}
 	
-	public void addEntityPanel(Object p) {
-		((JPanel) p).setAlignmentX(Component.LEFT_ALIGNMENT);
-		pnInfoPanelsContainer.add((Component) p);
+	public void addEntityPanel(Object panel) {
+		((JPanel) panel).setAlignmentX(Component.LEFT_ALIGNMENT);
+		pnInfoPanelsContainer.add((Component) panel);
 	}
 
 	public String getPanelClass() {

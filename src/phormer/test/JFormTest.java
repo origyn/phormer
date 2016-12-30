@@ -1,9 +1,9 @@
-package test;
+package phormer.test;
 
 import javax.swing.JFrame;
 
-import models.FormListener;
-import visuals.JForm;
+import phormer.models.FormListener;
+import phormer.visuals.JForm;
 
 public class JFormTest {
 	public JFormTest() {
@@ -30,6 +30,7 @@ public class JFormTest {
 		fr.setLocationRelativeTo(null);
 		fr.setVisible(true);
 		fr.add(form);
+		fr.pack();
 	}
 	
 	public static void main(String[] args) {

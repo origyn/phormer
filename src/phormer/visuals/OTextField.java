@@ -1,4 +1,4 @@
-package visuals;
+package phormer.visuals;
 
 import java.awt.Color;
 import java.util.regex.Pattern;
@@ -8,8 +8,8 @@ import javax.swing.JTextField;
 import javax.swing.UIManager;
 import javax.swing.text.Document;
 
-import models.FormComponent;
-import models.FormField;
+import phormer.models.FormComponent;
+import phormer.models.FormField;
 
 public class OTextField extends JTextField implements FormComponent {
 	private static final long serialVersionUID = -7627234507379200037L;

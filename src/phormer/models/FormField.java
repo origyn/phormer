@@ -1,16 +1,16 @@
-package models;
+package phormer.models;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.stream.Collectors;
 
-import visuals.JForm;
-import visuals.OMultipleOption;
+import phormer.visuals.JForm;
+import phormer.visuals.OMultipleOption;
 
 public class FormField {
-	private String name = "", defaultValue = "", relationField, sourceRelation, sourceRelationField, sourceRelatorAggregate, expanderXmlPath;
+	private String name = "", defaultValue = "", relationField, sourceRelation, sourceRelationField, sourceRelatorAggregate, expanderXmlPath, subordinateOf, subordinateRelationField;
 	private JForm.fieldTypes type = null;
-	private int minLength = 0, maxLength = 0, defaultSelectedEntityId = 0, orderNumber = 0;
+	private int minLength = 0, maxLength = 0, defaultSelectedEntityId = 0, orderNumber = 0, subordinateRelationFieldValue;
 	private ArrayList<OMultipleOption> multipleOptions = new ArrayList<OMultipleOption>();
 	private ArrayList<Relator> sourceRelators = new ArrayList<Relator>();
 	private boolean mandatory = false, optionsSorted = false, selectionLocked = false, onlyNumbers = false, expandable = false, searchable = false;
@@ -204,5 +204,29 @@ public class FormField {
 
 	public void setSourceRelatorAggregate(String sourceRelatorAggregate) {
 		this.sourceRelatorAggregate = sourceRelatorAggregate;
+	}
+	
+	public String getSubordinateOf() {
+		return subordinateOf;
+	}
+
+	public void setSubordinateOf(String subordinateOf) {
+		this.subordinateOf = subordinateOf;
+	}
+
+	public String getSubordinateRelationField() {
+		return subordinateRelationField;
+	}
+
+	public void setSubordinateRelationField(String subordinateRelationField) {
+		this.subordinateRelationField = subordinateRelationField;
+	}
+
+	public String getSubordinateRelationFieldValue() {
+		return subordinateRelationFieldValue + "";
+	}
+
+	public void setSubordinateRelationFieldValue(int subordinateRelationFieldValue) {
+		this.subordinateRelationFieldValue = subordinateRelationFieldValue;
 	}
 }

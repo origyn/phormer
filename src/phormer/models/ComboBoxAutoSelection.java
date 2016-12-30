@@ -1,9 +1,10 @@
-package models;
+package phormer.models;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.lang.Character.UnicodeBlock;
 
 import javax.swing.ComboBoxModel;
 import javax.swing.JTextField;
@@ -13,7 +14,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.JTextComponent;
 import javax.swing.text.PlainDocument;
 
-import visuals.OComboBox;
+import phormer.visuals.OComboBox;
 
 public class ComboBoxAutoSelection<E> extends PlainDocument {
 
@@ -25,6 +26,7 @@ public class ComboBoxAutoSelection<E> extends PlainDocument {
 	ComboBoxModel<E> model;
 	JTextComponent editor;
 	boolean selecting = false;
+	String accumulatedText = "";
 
 	public ComboBoxAutoSelection(final OComboBox<E> cb) {
 		this.comboBox = cb;
@@ -38,6 +40,7 @@ public class ComboBoxAutoSelection<E> extends PlainDocument {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				if(!selecting && model.getSelectedItem() != null) {
+					accumulatedText = "";
 					editor.setSelectionStart(0);
 					editor.setSelectionEnd(model.getSelectedItem().toString().length());
 				}
@@ -47,14 +50,32 @@ public class ComboBoxAutoSelection<E> extends PlainDocument {
 		this.editor.addKeyListener(new KeyListener() {
 			
 			@Override
-			public void keyTyped(KeyEvent e) { }
+			public void keyTyped(KeyEvent e) {
+				
+			}
 			
 			@Override
 			public void keyReleased(KeyEvent e) { }
 			
 			@Override
 			public void keyPressed(KeyEvent e) {
-				if(comboBox.isDisplayable()) {
+				if(e.getKeyCode() == KeyEvent.VK_BACK_SPACE) {
+					e.consume();
+					
+					if(accumulatedText.length() > 0) {
+						String searchText = accumulatedText.substring(0, accumulatedText.length()-1);
+						
+						accumulatedText = "";
+						
+						try {
+							insertString(0, searchText, null);
+						} catch (BadLocationException e1) {
+							e1.printStackTrace();
+						}
+					}
+				}
+				
+				if(comboBox.isDisplayable() && isPrintableCharacter(e.getKeyChar())) {
 					comboBox.setPopupVisible(true);
 				}
 			}
@@ -74,21 +95,30 @@ public class ComboBoxAutoSelection<E> extends PlainDocument {
 			return;
 		}
 		
+		str = accumulatedText.concat(str);
+		
 		super.insertString(offs, str, a);
 		
-		Object item = findItem(this.getText(0, this.getLength()));
+		Object item = findItem(str);
 		
 		if(item != null) {
+			accumulatedText = str;
+			
 			setSelectedItem(item);
+			
+			offs = item.toString().toLowerCase().indexOf(str.toLowerCase());
+			
+			setText(item.toString());
+			highlightText(offs, offs + str.length());
 		}
 		else {
 			item = model.getSelectedItem();
-			offs = offs - str.length();
+			
 			UIManager.getLookAndFeel().provideErrorFeedback(comboBox);
+			
+			setText(item.toString());
+			highlightText(offs, offs + str.length() - 1);
 		}
-		
-		setText(item.toString());
-		highlightText(offs + str.length());
 	}
 	
 	public void setSelectedItem(Object item) {
@@ -102,22 +132,15 @@ public class ComboBoxAutoSelection<E> extends PlainDocument {
 		super.insertString(0, str, null);
 	}
 	
-	public void highlightText(int start) {
+	public void highlightText(int start, int end) {
 		editor.setSelectionStart(start);
-		editor.setSelectionEnd(this.getLength());
+		editor.setSelectionEnd(end);
 	}
 	
 	public Object findItem(String content) {
-		Object selectedItem = model.getSelectedItem();
-		
-		if(selectedItem != null && ignoreCaseMatch(selectedItem.toString(), content)) {
-			return selectedItem;
-		}
-		else {
-			for (int i = 0; i < model.getSize(); i++) {
-				if(ignoreCaseMatch(model.getElementAt(i).toString(), content)) {
-					return model.getElementAt(i);
-				}
+		for (int i = 0; i < model.getSize(); i++) {
+			if(ignoreCaseMatch(model.getElementAt(i).toString(), content)) {
+				return model.getElementAt(i);
 			}
 		}
 		
@@ -125,6 +148,12 @@ public class ComboBoxAutoSelection<E> extends PlainDocument {
 	}
 	
 	public boolean ignoreCaseMatch(String itemText, String content) {
-		return itemText.toLowerCase().startsWith(content.toLowerCase());
+		return itemText.toLowerCase().contains(content.toLowerCase());
+	}
+	
+	public boolean isPrintableCharacter(char c) {
+		UnicodeBlock ub = UnicodeBlock.of(c);
+		
+		return !Character.isISOControl(c) && c != KeyEvent.CHAR_UNDEFINED && ub != null && ub != UnicodeBlock.SPECIALS;
 	}
 }
