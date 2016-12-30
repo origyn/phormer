@@ -1,11 +1,11 @@
-package test;
+package phormer.test;
 
 import java.awt.Dimension;
 import java.util.HashMap;
 
 import javax.swing.JFrame;
 
-import visuals.JLister;
+import phormer.visuals.JLister;
 
 public class JListerTest {
 	public JListerTest() {

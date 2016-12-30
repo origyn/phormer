@@ -19,7 +19,7 @@
     <onlyNumbers>true</onlyNumbers>
   </models.FormField>
   <models.FormField>
-    <name>test</name>
+    <name>Продукти</name>
     <type>COMBO_BOX</type>
     <relationField>market_id</relationField>
     <multipleOptions>
@@ -98,5 +98,28 @@
     <expandable>true</expandable>
     <searchable>true</searchable>
     <mandatory>true</mandatory>
+  </models.FormField>
+  <models.FormField>
+    <name>Град</name>
+    <type>COMBO_BOX</type>
+    <relationField>city_id</relationField>
+    <sourceRelation>address.city</sourceRelation>
+    <sourceRelationField>name</sourceRelationField>
+    <mandatory>true</mandatory>
+    <expanderXmlPath>files/xml/forms/city.xml</expanderXmlPath>
+    <expandable>true</expandable>
+    <searchable>true</searchable>
+  </models.FormField>
+  <models.FormField>
+    <name>Улица</name>
+    <type>COMBO_BOX</type>
+    <relationField>street_id</relationField>
+    <sourceRelation>address.street</sourceRelation>
+    <sourceRelationField>name</sourceRelationField>
+    <mandatory>true</mandatory>
+    <expanderXmlPath>files/xml/forms/street.xml</expanderXmlPath>
+    <expandable>true</expandable>
+    <subordinateOf>Град</subordinateOf>
+    <subordinateRelationField>city_id</subordinateRelationField>
   </models.FormField>
 </list>

@@ -1,4 +1,4 @@
-package visuals;
+package phormer.visuals;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -8,8 +8,8 @@ import javax.swing.AbstractButton;
 import javax.swing.ButtonGroup;
 import javax.swing.JRadioButton;
 
-import models.FormComponent;
-import models.FormField;
+import phormer.models.FormComponent;
+import phormer.models.FormField;
 
 public class OButtonGroup extends ButtonGroup implements FormComponent {
 	private static final long serialVersionUID = -4237967458406808827L;

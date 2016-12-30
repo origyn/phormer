@@ -1,4 +1,4 @@
-package visuals;
+package phormer.visuals;
 
 import java.awt.Color;
 import java.awt.Cursor;
@@ -14,9 +14,9 @@ import javax.swing.JTextField;
 import javax.swing.SwingConstants;
 import javax.swing.UIManager;
 
-import models.ComboBoxAutoSelection;
-import models.FormComponent;
-import models.FormField;
+import phormer.models.ComboBoxAutoSelection;
+import phormer.models.FormComponent;
+import phormer.models.FormField;
 
 public class OComboBox<E> extends JComboBox<E> implements FormComponent {
 	private static final long serialVersionUID = 880424372897780521L;
@@ -49,7 +49,7 @@ public class OComboBox<E> extends JComboBox<E> implements FormComponent {
 			btNew.setPressedIcon(new ImageIcon("files/pix/new_issue_pressed.png"));
 		}
 		
-		updateComboBoxState();
+		updateComboBoxState(this.selectionLocked || this.options == null);
 		
 		fillOptions(field);
 	}
@@ -58,8 +58,8 @@ public class OComboBox<E> extends JComboBox<E> implements FormComponent {
 		build(field);
 	}
 	
-	public void updateComboBoxState() {
-		if(this.selectionLocked || this.options == null) {
+	public void updateComboBoxState(boolean disabled) {
+		if(disabled) {
 			this.setEditable(true);
 			((JTextField) this.getEditor().getEditorComponent()).setDisabledTextColor(Color.BLACK);
 			((JTextField) this.getEditor().getEditorComponent()).setBackground(Color.LIGHT_GRAY);
@@ -162,6 +162,7 @@ public class OComboBox<E> extends JComboBox<E> implements FormComponent {
 	public void removeAllOptions() {
 		this.removeAllItems();
 		this.addItem((E) "");
+		this.repaint();
 	}
 
 	public ArrayList<OMultipleOption> getOptions() {

@@ -1,4 +1,4 @@
-package models;
+package phormer.models;
 
 public class Relator {
 	private int orderNumber = 0;
