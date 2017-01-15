@@ -15,7 +15,7 @@ public class OTextField extends JTextField implements FormComponent {
 	private static final long serialVersionUID = -7627234507379200037L;
 	private int minimumTextLength = -1, maximumTextLength = -1;
 	private boolean mandatory = false, onlyNumbers = false;
-	Pattern r = Pattern.compile("\\d+(\\.|,)?\\d?");
+	Pattern r = Pattern.compile("-?\\d+(\\.|,)?\\d*?");
 
 	public OTextField() {
 		super();

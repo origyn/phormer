@@ -1,5 +1,7 @@
 package phormer.test;
 
+import java.util.EventObject;
+
 import javax.swing.JFrame;
 
 import phormer.models.FormListener;
@@ -11,12 +13,12 @@ public class JFormTest {
 		form.addFormListener(new FormListener() {
 			
 			@Override
-			public void onSubmit() {
+			public void onSubmit(EventObject e) {
 				System.out.println("Button \"Save\" was clicked");
 			}
 			
 			@Override
-			public void onCancel() {
+			public void onCancel(EventObject e) {
 				System.exit(0);
 			}
 		});

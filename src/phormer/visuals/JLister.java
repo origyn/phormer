@@ -11,6 +11,7 @@ import java.lang.reflect.Method;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.EventObject;
 import java.util.HashMap;
 
 import javax.swing.BoxLayout;
@@ -26,16 +27,21 @@ import javax.swing.ScrollPaneConstants;
 import javax.swing.SwingConstants;
 
 import phormer.models.Entity;
+import phormer.models.EntityCollection;
 import phormer.models.FormListener;
+import phormer.models.JInfoPanel;
 
-public class JLister extends JPanel {
+public class JLister<E extends Entity> extends JPanel {
 	private static final long serialVersionUID = -8710333638794205968L;
-	Entity databaseCollection;
+	private Entity databaseConnection;
+	private EntityCollection<E> listedEntities = new EntityCollection<>();
+	private Class<E> entityClass;
 	private String panelClass, mainExpanderXML, dbSettingsXmlPath, expanderRelation, selectQuery;
 	private HashMap<String, String> fieldMapper, methodMapper;
 	private Dimension infoPanelDimension = new Dimension(100, 20);
 	private JPanel pnTools = new JPanel(), pnInfoPanelsContainer = new JPanel();
 	private JScrollPane scrlPane = new JScrollPane(pnInfoPanelsContainer);
+	private FormListener expanderListener;
 	public JButton bNew = new JButton(new ImageIcon("files/pix/new_icon2.png")), bSearch = new JButton(new ImageIcon("files/pix/search.png"));;
 	public JTextField tfSearch = new JTextField();
 	
@@ -47,12 +53,13 @@ public class JLister extends JPanel {
 	 * @param mainExpanderXML		Path to xml file for JForm to popup on button bNew action listener
 	 * @param infoPanelDimension	Maximum size for every info panel
 	 */
-	public JLister(String dbSettingsXmlPath, String selectQuery, String expanderRelation, String panelClass, HashMap<String, String> methodMapper, String mainExpanderXML, Dimension infoPanelDimension) {
+	public JLister(String dbSettingsXmlPath, String selectQuery, String expanderRelation, String panelClass, Class<E> entityClass, HashMap<String, String> methodMapper, String mainExpanderXML, Dimension infoPanelDimension) {
 		this.selectQuery = selectQuery;
 		this.dbSettingsXmlPath = dbSettingsXmlPath;
 		this.mainExpanderXML = mainExpanderXML;
 		this.expanderRelation = expanderRelation;
-		this.databaseCollection = new Entity(dbSettingsXmlPath);
+		this.databaseConnection = new Entity(dbSettingsXmlPath);
+		this.entityClass = entityClass;
 		this.setInfoPanelDimension(infoPanelDimension);
 		pnInfoPanelsContainer.setLayout(new BoxLayout(pnInfoPanelsContainer, BoxLayout.Y_AXIS));
 		scrlPane.getVerticalScrollBar().setUnitIncrement(16);
@@ -133,16 +140,20 @@ public class JLister extends JPanel {
 				JFrame fr = new JFrame(expanderRelation);
 				JForm expander = new JForm(mainExpanderXML, dbSettingsXmlPath, expanderRelation, 300, 25);
 				
+				if(expanderListener != null) {
+					expander.addFormListener(expanderListener);
+				}
+				
 				expander.addFormListener(new FormListener() {
 					
 					@Override
-					public void onSubmit() {
+					public void onSubmit(EventObject e) {
 						populate(selectQuery);
 						fr.dispatchEvent(new WindowEvent(fr, WindowEvent.WINDOW_CLOSING));
 					}
 					
 					@Override
-					public void onCancel() {
+					public void onCancel(EventObject e) {
 						fr.dispatchEvent(new WindowEvent(fr, WindowEvent.WINDOW_CLOSING));
 					}
 				});
@@ -175,7 +186,7 @@ public class JLister extends JPanel {
 	}
 	
 	public void populate(String selectQuery) {
-		ResultSet rs = this.databaseCollection.dbUtility.execute(selectQuery);
+		ResultSet rs = this.databaseConnection.dbUtility.execute(selectQuery);
 		
 		try {
 			ResultSetMetaData rsmd = rs.getMetaData();
@@ -188,6 +199,10 @@ public class JLister extends JPanel {
 				Object panel = c.newInstance();
 				
 				((Component) panel).setMaximumSize(this.infoPanelDimension);
+				
+				int id = rs.getInt("id");
+				
+				((JInfoPanel) panel).setEntityId(id);
 				
 				if(methodMapper != null) {
 					String[] keys = methodMapper.keySet().toArray(new String[]{});
@@ -210,6 +225,20 @@ public class JLister extends JPanel {
 					}
 				}
 				
+				((JInfoPanel) panel).addFormListener(new FormListener() {
+					
+					@Override
+					public void onSubmit(EventObject e) {
+						refreshList();
+					}
+					
+					@Override
+					public void onCancel(EventObject e) {
+						// TODO Auto-generated method stub
+						
+					}
+				});
+				
 				addEntityPanel(panel);
 			}
 			
@@ -228,9 +257,29 @@ public class JLister extends JPanel {
 		populate(selectQuery);
 	}
 	
+	public void refreshList() {
+		populate(this.selectQuery);
+	}
+	
 	public void addEntityPanel(Object panel) {
-		((JPanel) panel).setAlignmentX(Component.LEFT_ALIGNMENT);
-		pnInfoPanelsContainer.add((Component) panel);
+		try {
+			E newEntity = this.entityClass.newInstance();
+
+			newEntity.addProperty("id", ((JInfoPanel) panel).getEntityId());
+			newEntity.setRepresentativePanel((JPanel) panel);
+			newEntity.getRepresentativePanel().setAlignmentX(Component.LEFT_ALIGNMENT);
+			
+			listedEntities.add(newEntity);
+			
+			pnInfoPanelsContainer.add(newEntity.getRepresentativePanel());
+		} catch (InstantiationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IllegalAccessException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
 	}
 
 	public String getPanelClass() {
@@ -251,5 +300,17 @@ public class JLister extends JPanel {
 
 	public JScrollPane getScrlPane() {
 		return scrlPane;
+	}
+
+	public String getSelectQuery() {
+		return selectQuery;
+	}
+	
+	public void addExpanderListener(FormListener fl) {
+		this.expanderListener = fl;
+	}
+	
+	public EntityCollection<E> getListedEntites() {
+		return this.listedEntities;
 	}
 }

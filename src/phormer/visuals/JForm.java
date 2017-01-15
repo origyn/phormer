@@ -14,7 +14,9 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Enumeration;
+import java.util.EventObject;
 import java.util.HashMap;
+import java.util.Iterator;
 
 import javax.swing.GroupLayout;
 import javax.swing.GroupLayout.ParallelGroup;
@@ -38,7 +40,7 @@ import javax.swing.GroupLayout.Alignment;
 public class JForm extends JPanel {
 	private static final long serialVersionUID = -432718193365912996L;
 	private int componentsWidth = 0, componentsHeight = 0;
-	private FormListener listener;
+	private ArrayList<FormListener> listeners = new ArrayList<FormListener>();
 	private String dbSettingsXmlPath;
 	HashMap<Integer, FormField> formFields = new HashMap<>();
 	HashMap<Integer, String> hmFieldOrder = new HashMap<>();
@@ -49,6 +51,7 @@ public class JForm extends JPanel {
 	HashMap<String, JLabel> hmInfoLabels = new HashMap<>();
 	HashMap<String, OButtonGroup> hmRadioGroups = new HashMap<>();
 	HashMap<String, HashMap<String, String>> hmComboBoxSourceRelationMapper = new HashMap<>();
+	HashMap<String, OFileChooser> hmFileChoosers = new HashMap<>();
 	Entity entity;
 	public JButton btSave = new JButton("Save");
 	public JButton btCancel = new JButton("Cancel");
@@ -57,7 +60,8 @@ public class JForm extends JPanel {
 		TEXT_FIELD,
 		COMBO_BOX,
 		TEXT_AREA,
-		RADIO_GROUP
+		RADIO_GROUP,
+		FILE_CHOOSER
 	}
 	
 	public JForm(String formSpecsXmlPath, String dbSettingsXmlPath, String relation, int componentsWidth, int componentsHeight) {
@@ -122,13 +126,22 @@ public class JForm extends JPanel {
 							else if(hmRadioGroups.get(formField.getName()) != null) {
 								entity.addProperty(formField.getRelationField(), hmRadioGroups.get(formField.getName()).getSelectedEntityId() + "");
 							}
+							else if(hmFileChoosers.get(formField.getName()) != null) {
+								entity.addProperty(formField.getRelationField(), hmFileChoosers.get(formField.getName()).getTextField().getText() + "");
+							}
 						}
 					}
 					
 					if(entity.save()) {
 						clearValues();
 						
-						if(listener != null) listener.onSubmit();
+						if(listeners.size() > 0) {
+							for (Iterator<FormListener> iterator = listeners.iterator(); iterator.hasNext();) {
+								FormListener formListener = (FormListener) iterator.next();
+								
+								formListener.onSubmit(new EventObject(((JButton) e.getSource()).getParent()));
+							}
+						}
 					}
 				}
 			}
@@ -140,7 +153,13 @@ public class JForm extends JPanel {
 			public void actionPerformed(ActionEvent e) {
 				clearValues();
 				
-				if(listener != null) listener.onCancel();
+				if(listeners.size() > 0) {
+					for (Iterator<FormListener> iterator = listeners.iterator(); iterator.hasNext();) {
+						FormListener formListener = (FormListener) iterator.next();
+						
+						formListener.onCancel(new EventObject(((JButton) e.getSource()).getParent()));
+					}
+				}
 			}
 		});
 	}
@@ -151,6 +170,7 @@ public class JForm extends JPanel {
 		long errors = hmTextFields.values().stream().filter(field -> field.validateFormComponent() == true).count();
 		errors += hmComboBoxes.values().stream().filter(field -> field.validateFormComponent() == true).count();
 		errors += hmTextAreas.values().stream().filter(field -> field.validateFormComponent() == true).count();
+		errors += hmFileChoosers.values().stream().filter(field -> field.validateFormComponent() == true).count();
 		
 		return errors>0?false:true;
 	}
@@ -190,7 +210,7 @@ public class JForm extends JPanel {
 							expander.addFormListener(new FormListener() {
 								
 								@Override
-								public void onSubmit() {
+								public void onSubmit(EventObject e) {
 									formFields.get(key).emptyMultipleOptions();
 									
 									if(formFields.get(key).getSubordinateOf() != null && formFields.get(key).getSubordinateRelationField() != null) {
@@ -212,7 +232,7 @@ public class JForm extends JPanel {
 								}
 								
 								@Override
-								public void onCancel() {
+								public void onCancel(EventObject e) {
 									fr.dispatchEvent(new WindowEvent(fr, WindowEvent.WINDOW_CLOSING));
 								}
 							});
@@ -233,6 +253,9 @@ public class JForm extends JPanel {
 				break;
 			case RADIO_GROUP:
 				hmRadioGroups.put(formFields.get(key).getName(), new OButtonGroup(formFields.get(key)));
+				break;
+			case FILE_CHOOSER:
+				hmFileChoosers.put(formFields.get(key).getName(), new OFileChooser(formFields.get(key)));
 				break;
 			default:
 				break;
@@ -337,25 +360,28 @@ public class JForm extends JPanel {
 			
 			if(component == null) {
 				component = hmComboBoxes.get(fieldName);
-				try {
-					Class<?> cl = Class.forName(component.getClass().getName());
-					Field fl = cl.getDeclaredField("btNew");
-					
-					if(fl.get(component) != null) {
-						listExpandable = true;
+				
+				if(component != null) {
+					try {
+						Class<?> cl = Class.forName(component.getClass().getName());
+						Field fl = cl.getDeclaredField("btNew");
+						
+						if(fl.get(component) != null) {
+							listExpandable = true;
+						}
+					} catch (ClassNotFoundException | SecurityException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (NoSuchFieldException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IllegalArgumentException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					} catch (IllegalAccessException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
 					}
-				} catch (ClassNotFoundException | SecurityException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (NoSuchFieldException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IllegalArgumentException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				} catch (IllegalAccessException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
 				}
 			}
 			
@@ -369,23 +395,37 @@ public class JForm extends JPanel {
 			
 			labelsHorizontalGroup.addComponent(hmLabels.get(fieldName));
 			
-			SequentialGroup radioHorizontalGroup = layout.createSequentialGroup();
-			ParallelGroup radioVerticalGroup = layout.createParallelGroup();
+			SequentialGroup componentHorizontalGroup = layout.createSequentialGroup();
+			ParallelGroup componentVerticalGroup = layout.createParallelGroup();
 			
 			if(component == null) {
-				radioVerticalGroup.addComponent(hmLabels.get(fieldName));
-				
-				for(Enumeration<AbstractButton> buttons = hmRadioGroups.get(fieldName).getElements(); buttons.hasMoreElements();) {
-					AbstractButton button = buttons.nextElement();
+				if(hmFileChoosers.get(fieldName) == null) {
+					componentVerticalGroup.addComponent(hmLabels.get(fieldName));
 					
-					radioHorizontalGroup.addComponent(button);
-					radioVerticalGroup.addComponent(button);
+					for(Enumeration<AbstractButton> buttons = hmRadioGroups.get(fieldName).getElements(); buttons.hasMoreElements();) {
+						AbstractButton button = buttons.nextElement();
+						
+						componentHorizontalGroup.addComponent(button);
+						componentVerticalGroup.addComponent(button);
+					}
+				}
+				else {
+					componentVerticalGroup.addComponent(hmLabels.get(fieldName));
+					
+					componentHorizontalGroup.addGroup(layout.createParallelGroup()
+						.addGroup(layout.createSequentialGroup()
+							.addComponent(hmFileChoosers.get(fieldName).getTextField())
+							.addComponent(hmFileChoosers.get(fieldName).getButton())));
+					
+					componentVerticalGroup.addGroup(layout.createParallelGroup()
+						.addComponent(hmFileChoosers.get(fieldName).getTextField())
+						.addComponent(hmFileChoosers.get(fieldName).getButton()));
 				}
 			}
 			
 			if(component == null) {
-				fieldsHorizontalGroup.addGroup(radioHorizontalGroup);
-				verticalGroup.addGroup(radioVerticalGroup);
+				fieldsHorizontalGroup.addGroup(componentHorizontalGroup);
+				verticalGroup.addGroup(componentVerticalGroup);
 			}
 			else {
 				if(!listExpandable) {
@@ -591,7 +631,7 @@ public class JForm extends JPanel {
 	}
 	
 	public void addFormListener(FormListener listener) {
-		this.listener = listener;
+		this.listeners.add(listener);
 	}
 	
 	public OComboBox<String> getComboBox(String name) {
@@ -628,5 +668,19 @@ public class JForm extends JPanel {
 
 	public void setComponentsWidth(int componentsWidth) {
 		this.componentsWidth = componentsWidth;
+	}
+
+	public FormField getFormField(String fieldName) {
+		for (FormField ff : formFields.values()) {
+			if(ff.getName().equals(fieldName)) {
+				return ff;
+			}
+		}
+		
+		return null;
+	}
+
+	public Entity getEntity() {
+		return entity;
 	}
 }

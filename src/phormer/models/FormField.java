@@ -8,7 +8,7 @@ import phormer.visuals.JForm;
 import phormer.visuals.OMultipleOption;
 
 public class FormField {
-	private String name = "", defaultValue = "", relationField, sourceRelation, sourceRelationField, sourceRelatorAggregate, expanderXmlPath, subordinateOf, subordinateRelationField;
+	private String name = "", defaultValue = "", relationField, sourceRelation, sourceRelationField, sourceRelatorAggregate, expanderXmlPath, subordinateOf, subordinateRelationField, defaultFilePath = "";
 	private JForm.fieldTypes type = null;
 	private int minLength = 0, maxLength = 0, defaultSelectedEntityId = 0, orderNumber = 0, subordinateRelationFieldValue;
 	private ArrayList<OMultipleOption> multipleOptions = new ArrayList<OMultipleOption>();
@@ -88,6 +88,14 @@ public class FormField {
 		if(this.multipleOptions != null) {
 			this.multipleOptions.clear();
 		}
+	}
+	
+	public void addMultipleOption(int id, String name) {
+		if(multipleOptions == null) {
+			multipleOptions = new ArrayList<OMultipleOption>();
+		}
+		
+		multipleOptions.add(new OMultipleOption(id, name));
 	}
 	
 	public ArrayList<Relator> getSourceRelators() {
@@ -228,5 +236,13 @@ public class FormField {
 
 	public void setSubordinateRelationFieldValue(int subordinateRelationFieldValue) {
 		this.subordinateRelationFieldValue = subordinateRelationFieldValue;
+	}
+
+	public String getDefaultFilePath() {
+		return defaultFilePath;
+	}
+
+	public void setDefaultFilePath(String defaultFilePath) {
+		this.defaultFilePath = defaultFilePath;
 	}
 }
