@@ -2,8 +2,10 @@ package phormer.visuals;
 
 import java.awt.Color;
 import java.awt.Cursor;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.stream.Collectors;
 
 import javax.swing.BorderFactory;
@@ -27,6 +29,24 @@ public class OComboBox<E> extends JComboBox<E> implements FormComponent {
 	
 	public OComboBox(FormField field) {
 		build(field);
+		
+		this.getEditor().getEditorComponent().addKeyListener(new KeyListener() {
+			
+			@Override
+			public void keyTyped(KeyEvent e) { }
+			
+			@Override
+			public void keyReleased(KeyEvent e) { }
+			
+			@Override
+			public void keyPressed(KeyEvent e) {
+				if(e.getKeyCode() == KeyEvent.VK_N && e.getModifiers() == ActionEvent.CTRL_MASK) {
+					if(field.isExpandable()) {
+						btNew.doClick();
+					}
+				}
+			}
+		});
 	}
 	
 	public void build(FormField field) {
@@ -128,9 +148,7 @@ public class OComboBox<E> extends JComboBox<E> implements FormComponent {
 		
 		if(options != null)
 		{
-			for (Iterator<OMultipleOption> iterator = options.iterator(); iterator.hasNext();) {
-				OMultipleOption option = (OMultipleOption) iterator.next();
-				
+			options.stream().sorted((o1, o2) -> o1.getName().compareTo(o2.getName())).forEach(option -> {
 				this.addItem((E) option.getName());
 				
 				if(field.getDefaultSelectedEntityId() == option.getId()) {
@@ -138,7 +156,19 @@ public class OComboBox<E> extends JComboBox<E> implements FormComponent {
 					
 					resetSelection();
 				}
-			}
+			});
+			
+//			for (Iterator<OMultipleOption> iterator = options.iterator(); iterator.hasNext();) {
+//				OMultipleOption option = (OMultipleOption) iterator.next();
+//				
+//				this.addItem((E) option.getName());
+//				
+//				if(field.getDefaultSelectedEntityId() == option.getId()) {
+//					defaultSelectedIndex = this.getItemCount()-1;
+//					
+//					resetSelection();
+//				}
+//			}
 		}
 	}
 	

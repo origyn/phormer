@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.stream.Collectors;
@@ -108,32 +109,37 @@ public class DatabaseUtility {
 		return dbRowId;
 	}
 	
-	public int applyToDatabase(String query, HashMap<String, String> arguments) throws SQLException {
+	public int applyToDatabase(String query, ArrayList<HashMap<String, String>> batches) throws SQLException {
 		int dbRowId = 0;
 		
 		if(connect()) {
 			PreparedStatement prep = conn.prepareStatement(query, Statement.RETURN_GENERATED_KEYS);
 			
-			String[] keys = arguments.keySet().toArray(new String[]{});
-			Arrays.sort(keys);
-			
-			for(int i = 0; i < keys.length; i++) {
-				try {
-					int argValue = Integer.parseInt(arguments.get(keys[i]));
-
-					prep.setInt(i+1, argValue);
-				}
-				catch (NumberFormatException ex) {
-					if(arguments.get(keys[i]).length() > 0) {
-						prep.setString(i+1, arguments.get(keys[i]));
+			for (HashMap<String, String> arguments : batches) {
+				String[] keys = arguments.keySet().toArray(new String[]{});
+				Arrays.sort(keys);
+				
+				for(int i = 0; i < keys.length; i++) {
+					try {
+						int argValue = Integer.parseInt(arguments.get(keys[i]));
+	
+						prep.setInt(i+1, argValue);
 					}
-					else {
-						prep.setNull(i+1, Types.INTEGER);
+					catch (NumberFormatException ex) {
+						if(arguments.get(keys[i]).length() > 0) {
+							prep.setString(i+1, arguments.get(keys[i]));
+						}
+						else {
+							prep.setNull(i+1, Types.INTEGER);
+						}
 					}
+					
 				}
+				
+				prep.addBatch();
 			}
 			
-			prep.executeUpdate();
+			prep.executeBatch();
 			
 			ResultSet rs = prep.getGeneratedKeys();
 			

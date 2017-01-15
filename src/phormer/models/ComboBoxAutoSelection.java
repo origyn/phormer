@@ -74,7 +74,7 @@ public class ComboBoxAutoSelection<E> extends PlainDocument {
 						}
 					}
 				}
-				
+
 				if(comboBox.isDisplayable() && isPrintableCharacter(e.getKeyChar())) {
 					comboBox.setPopupVisible(true);
 				}

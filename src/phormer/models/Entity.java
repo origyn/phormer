@@ -1,10 +1,15 @@
 package phormer.models;
 
 import java.io.File;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.stream.Collectors;
+
+import javax.swing.JPanel;
 
 import com.thoughtworks.xstream.XStream;
 
@@ -14,6 +19,11 @@ public class Entity {
 	public DatabaseUtility dbUtility;
 	public String relation = "";
 	public HashMap<String, String> properties = new HashMap<>();
+	private JPanel representativePanel = new JPanel();
+	
+	public Entity() {
+		
+	}
 	
 	public Entity(String relation, String dbSettingsXmlPath) {
 		this.relation = relation;
@@ -60,7 +70,11 @@ public class Entity {
 		query = query + ") " + queryValues + ")";
 		
 		try {
-			properties.put("id", dbUtility.applyToDatabase(query, properties) + "");
+			ArrayList<HashMap<String, String>> singleBatch = new ArrayList<>();
+			
+			singleBatch.add(properties);
+			
+			properties.put("id", dbUtility.applyToDatabase(query, singleBatch) + "");
 			
 			return true;
 		} catch (SQLException e) {
@@ -106,11 +120,63 @@ public class Entity {
 		}
 	}
 	
+	public boolean populateFromDB() {
+		if(this.get("id") == null || this.relation.length() == 0) {
+			return false;
+		}
+		
+		try {
+			ResultSet rs = dbUtility.execute("SELECT * FROM " + this.relation + " WHERE id = " + this.get("id") + " LIMIT 1;");
+			
+			rs.next();
+			
+			ResultSetMetaData rsmd = rs.getMetaData();
+			
+			for (int i = 0; i < rsmd.getColumnCount(); i++) {
+				this.addProperty(rsmd.getColumnName(i+1), rs.getObject(i+1).toString());
+			}
+			
+			rs.close();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		return true;
+	}
+	
 	public void addProperty(String propertyName, String propertyValue) {
+		if(properties.containsKey(propertyName)) {
+			properties.remove(propertyName);
+		}
+		
 		properties.put(propertyName, propertyValue);
+	}
+	
+	public void addProperty(String propertyName, Integer propertyValue) {
+		this.addProperty(propertyName, propertyValue + "");
+	}
+	
+	public void addProperty(String propertyName, Long propertyValue) {
+		this.addProperty(propertyName, propertyValue + "");
 	}
 	
 	public String get(String propertyName) {
 		return properties.get(propertyName);
+	}
+
+	public JPanel getRepresentativePanel() {
+		return representativePanel;
+	}
+
+	public void setRepresentativePanel(JPanel representativePanel) {
+		this.representativePanel = representativePanel;
+	}
+	
+	public void createDbUtility(String dbSettingsXmlPath) {
+		XStream xstream = new XStream();
+		xstream.setMode(XStream.NO_REFERENCES);
+		
+		dbUtility = (DatabaseUtility) xstream.fromXML(new File(dbSettingsXmlPath));
 	}
 }
